@@ -233,13 +233,18 @@
                     <div class="w-full h-[1px] bg-brand-border mb-6"></div>
 
                     <!-- Plus Minus -->
+                    @php
+                        // Coba pakai data dari DB jika ada, split berdasarkan koma. Jika kosong, fallback ke hardcode.
+                        $plusList = $m->kelebihan ? array_filter(array_map('trim', explode(',', $m->kelebihan))) : $info['plus'];
+                        $minusList = $m->kekurangan ? array_filter(array_map('trim', explode(',', $m->kekurangan))) : $info['minus'];
+                    @endphp
                     <div class="grid grid-cols-2 gap-5">
                         <div>
                             <div class="text-[10px] font-bold tracking-widest text-brand-dark uppercase mb-3 flex items-center gap-1">
                                 <span>+</span> KELEBIHAN
                             </div>
                             <ul class="text-xs text-brand-accent space-y-2.5">
-                                @foreach($info['plus'] as $plus)
+                                @foreach($plusList as $plus)
                                     <li class="flex items-start gap-1.5">
                                         <div class="w-1 h-1 rounded-full bg-brand-dark mt-1.5 flex-shrink-0"></div>
                                         <span class="leading-relaxed">{{ $plus }}</span>
@@ -252,7 +257,7 @@
                                 <span>-</span> KEKURANGAN
                             </div>
                             <ul class="text-xs text-brand-accent space-y-2.5">
-                                @foreach($info['minus'] as $minus)
+                                @foreach($minusList as $minus)
                                     <li class="flex items-start gap-1.5">
                                         <div class="w-1 h-1 rounded-full bg-amber-800/60 mt-1.5 flex-shrink-0"></div>
                                         <span class="leading-relaxed">{{ $minus }}</span>

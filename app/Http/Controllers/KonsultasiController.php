@@ -38,7 +38,9 @@ class KonsultasiController extends Controller
             }
         }
 
-        return view('konsultasi', compact('kelompokKondisi'));
+        $metodeKbs = MetodeKb::all();
+
+        return view('konsultasi', compact('kelompokKondisi', 'metodeKbs'));
     }
 
     /**
@@ -60,6 +62,9 @@ class KonsultasiController extends Controller
             'suami' => $request->input('suami', '-'),
             'jml_anak' => (int) $request->input('jml_anak', 0)
         ];
+
+        // Target KB (Goal Utama) yang dipilih pasien
+        $targetKb = $request->input('target_kb', null);
 
         // Tangkap array ID kondisi yang dicentang user
         $kondisiUser = $request->input('kondisi', []);
@@ -85,142 +90,145 @@ class KonsultasiController extends Controller
         // Ambil nama kondisi untuk ditampilkan di hasil
         $kondisiDipilih = Kondisi::whereIn('id', $kondisiUser)->get();
 
-        // 2. Ambil semua aturan dari database
-        $semuaAturan = Aturan::all();
+        // 2. Persiapan Data untuk Backward Chaining
+        $semuaMetode = MetodeKb::all()->keyBy('id');
+        // Kelompokkan aturan berdasarkan Konklusi (Goal)
+        $semuaAturanGrouped = Aturan::all()->groupBy('konklusi');
+        $kondisiLookup = Kondisi::pluck('nama_kondisi', 'id')->toArray();
 
-        // Array untuk menyimpan CF per metode & tracking aturan yang tereksekusi
-        $hasilCF = [];           // ['M01' => 0.85, 'M02' => 0.72, ...]
-        $dilarang = [];          // ['M05' => true, ...] — metode yang dilarang mutlak
+        $hasilAkhir = [];
         $aturanAktif = [];       // Tracking aturan mana saja yang aktif
         $detailPerhitungan = []; // Detail step-by-step untuk transparansi
 
-        // 3. Forward Chaining: evaluasi setiap aturan
-        foreach ($semuaAturan as $aturan) {
-            $premis = $aturan->premis;
-            $konklusi = $aturan->konklusi;
-            $cfPakar = (float) $aturan->cf_pakar;
-
-            // Evaluasi premis
-            $terpenuhi = $this->evaluasiPremis($premis, $kondisiUser);
-
-            if (!$terpenuhi) {
-                continue; // Skip aturan yang premisnya tidak terpenuhi
-            }
-
-            // Aturan tereksekusi! Catat.
-            $aturanAktif[] = [
-                'id_aturan' => $aturan->id_aturan,
-                'premis' => $premis,
-                'konklusi' => $konklusi,
-                'cf_pakar' => $cfPakar,
-                'kategori_mec' => $aturan->kategori_mec,
-            ];
-
-            // 5. RULE KHUSUS: CF Pakar = -1.0 → Dilarang Mutlak (MEC 4)
-            if ($cfPakar == -1.0) {
-                $dilarang[$konklusi] = true;
-
-                $detailPerhitungan[] = [
-                    'aturan' => $aturan->id_aturan,
-                    'metode' => $konklusi,
-                    'aksi' => 'DILARANG MUTLAK (MEC 4)',
-                    'cf_pakar' => $cfPakar,
-                ];
-                continue;
-            }
-
-            // 4. Hitung CF — CF User = 1.0 (karena user mencentang kondisi)
-            $cfUser = 1.0;
-            $cfHitung = $cfPakar * $cfUser; // = cfPakar (karena CF User selalu 1)
-
-            if (!isset($hasilCF[$konklusi])) {
-                // Metode ini baru pertama kali muncul
-                $hasilCF[$konklusi] = $cfHitung;
-
-                $detailPerhitungan[] = [
-                    'aturan' => $aturan->id_aturan,
-                    'metode' => $konklusi,
-                    'aksi' => 'CF awal',
-                    'cf_pakar' => $cfPakar,
-                    'cf_hasil' => $cfHitung,
-                ];
-            } else {
-                // Sudah ada CF sebelumnya → Kombinasikan
-                $cfOld = $hasilCF[$konklusi];
-                $cfNew = $cfHitung;
-
-                // Rumus kombinasi CF:
-                // Jika keduanya positif: CF_combine = CF_old + CF_new × (1 - CF_old)
-                // Jika keduanya negatif: CF_combine = CF_old + CF_new × (1 + CF_old)
-                // Jika berbeda tanda: CF_combine = (CF_old + CF_new) / (1 - min(|CF_old|, |CF_new|))
-                if ($cfOld >= 0 && $cfNew >= 0) {
-                    $cfCombine = $cfOld + $cfNew * (1 - $cfOld);
-                } elseif ($cfOld < 0 && $cfNew < 0) {
-                    $cfCombine = $cfOld + $cfNew * (1 + $cfOld);
-                } else {
-                    $denominator = 1 - min(abs($cfOld), abs($cfNew));
-                    $cfCombine = $denominator != 0 ? ($cfOld + $cfNew) / $denominator : $cfOld + $cfNew;
-                }
-
-                $detailPerhitungan[] = [
-                    'aturan' => $aturan->id_aturan,
-                    'metode' => $konklusi,
-                    'aksi' => 'Kombinasi CF',
-                    'cf_pakar' => $cfPakar,
-                    'cf_old' => round($cfOld, 4),
-                    'cf_new' => round($cfNew, 4),
-                    'cf_hasil' => round($cfCombine, 4),
-                ];
-
-                $hasilCF[$konklusi] = $cfCombine;
-            }
+        // Jika ada target, evaluasi target tersebut terlebih dahulu (re-ordering array goals)
+        $goalIds = $semuaMetode->keys()->toArray();
+        if ($targetKb && in_array($targetKb, $goalIds)) {
+            $goalIds = array_diff($goalIds, [$targetKb]);
+            array_unshift($goalIds, $targetKb);
         }
 
-        // 6. Susun hasil akhir: gabungkan dengan data metode KB
-        $semuaMetode = MetodeKb::all()->keyBy('id');
-        $kondisiLookup = Kondisi::pluck('nama_kondisi', 'id')->toArray();
-        $hasilAkhir = [];
+        // 3. Backward Chaining: Mengevaluasi setiap Goal (Metode KB)
+        foreach ($goalIds as $idMetode) {
+            $metode = $semuaMetode[$idMetode];
+            $aturanUntukMetode = $semuaAturanGrouped->get($idMetode, collect());
 
-        foreach ($semuaMetode as $id => $metode) {
-            $status = 'tidak_ada_data'; // Default jika tidak ada aturan yang cocok
-            $cf = 0;
+            $cfMethod = null;
+            $isDilarang = false;
+            $status = 'tidak_ada_data';
             $alasan = [];
 
-            if (isset($dilarang[$id])) {
-                // Metode ini DILARANG MUTLAK — override semua CF positif
+            // Mengevaluasi mundur semua premis yang dibutuhkan untuk goal ini
+            foreach ($aturanUntukMetode as $aturan) {
+                $premis = $aturan->premis;
+                $cfPakar = (float) $aturan->cf_pakar;
+
+                // Cek ke Fakta Pasien
+                $terpenuhi = $this->evaluasiPremis($premis, $kondisiUser);
+
+                if (!$terpenuhi) {
+                    continue; // Fakta tidak mendukung aturan ini
+                }
+
+                // Fakta mendukung aturan ini! Aturan tereksekusi.
+                $aturanAktif[] = [
+                    'id_aturan' => $aturan->id_aturan,
+                    'premis' => $premis,
+                    'konklusi' => $idMetode,
+                    'cf_pakar' => $cfPakar,
+                    'kategori_mec' => $aturan->kategori_mec,
+                ];
+
+                // RULE KHUSUS (Mutlak)
+                if ($cfPakar == -1.0) {
+                    $isDilarang = true;
+                    $detailPerhitungan[] = [
+                        'aturan' => $aturan->id_aturan, 'metode' => $idMetode,
+                        'aksi' => 'DILARANG MUTLAK (MEC 4)', 'cf_pakar' => $cfPakar
+                    ];
+                    continue;
+                }
+
+                // Kalkulasi CF
+                $cfUser = 1.0;
+                $cfHitung = $cfPakar * $cfUser;
+
+                if ($cfMethod === null) {
+                    $cfMethod = $cfHitung;
+                    $detailPerhitungan[] = [
+                        'aturan' => $aturan->id_aturan, 'metode' => $idMetode,
+                        'aksi' => 'CF awal', 'cf_pakar' => $cfPakar, 'cf_hasil' => $cfHitung
+                    ];
+                } else {
+                    $cfOld = $cfMethod;
+                    $cfNew = $cfHitung;
+
+                    if ($cfOld >= 0 && $cfNew >= 0) {
+                        $cfCombine = $cfOld + $cfNew * (1 - $cfOld);
+                    } elseif ($cfOld < 0 && $cfNew < 0) {
+                        $cfCombine = $cfOld + $cfNew * (1 + $cfOld);
+                    } else {
+                        $denominator = 1 - min(abs($cfOld), abs($cfNew));
+                        $cfCombine = $denominator != 0 ? ($cfOld + $cfNew) / $denominator : $cfOld + $cfNew;
+                    }
+
+                    $detailPerhitungan[] = [
+                        'aturan' => $aturan->id_aturan, 'metode' => $idMetode,
+                        'aksi' => 'Kombinasi CF', 'cf_pakar' => $cfPakar,
+                        'cf_old' => round($cfOld, 4), 'cf_new' => round($cfNew, 4), 'cf_hasil' => round($cfCombine, 4)
+                    ];
+                    $cfMethod = $cfCombine;
+                }
+            }
+
+            // 4. Kesimpulan untuk Goal Ini
+            if ($isDilarang) {
                 $status = 'dilarang';
-                $cf = -1.0;
+                $cfMethod = -1.0;
                 
                 $alasanFatal = [];
                 foreach ($aturanAktif as $r) {
-                    if ($r['konklusi'] === $id && $r['cf_pakar'] == -1.0) {
-                        $alasanFatal[] = $this->terjemahkanPremis($r['premis'], $kondisiLookup);
+                    if ($r['konklusi'] === $idMetode && $r['cf_pakar'] == -1.0) {
+                        $namaKondisi = $this->terjemahkanPremis($r['premis'], $kondisiLookup);
+                        
+                        // Cek apakah ada alasan khusus dari DB
+                        if (!empty($r['alasan_medis'])) {
+                            $alasan[] = $r['alasan_medis'];
+                        } else {
+                            $alasanFatal[] = $namaKondisi;
+                        }
                     }
                 }
+                
                 if (!empty($alasanFatal)) {
-                    $alasan[] = "Berdasarkan pedoman keselamatan medis ketat dari WHO (Kategori MEC 4), metode ini kami tetapkan sebagai DILARANG MUTLAK untuk Bunda. Kami mendeteksi adanya riwayat " . implode(" serta ", array_unique($alasanFatal)) . ". Penggunaan metode ini dalam kondisi tersebut sangat dilarang karena berpotensi memicu komplikasi fatal yang mengancam jiwa atau memperburuk riwayat penyakit yang sudah ada. Sebagai praktisi kesehatan, keselamatan dan nyawa Bunda adalah prioritas tertinggi kami, sehingga opsi ini telah digugurkan sepenuhnya dari daftar rekomendasi.";
+                    $alasanDetail = $this->generateAlasanMedisSpesifik($alasanFatal, $metode->nama_metode, 'fatal');
+                    $alasan[] = "Berdasarkan evaluasi keahlian klinis Bidan dan pedoman ketat WHO (Kategori MEC 4), metode ini kami tetapkan sebagai DILARANG MUTLAK untuk Bunda. Mengapa? Karena $alasanDetail. Keselamatan Bunda adalah prioritas, sehingga opsi ini telah digugurkan sepenuhnya.";
                 }
-            } elseif (isset($hasilCF[$id])) {
-                $cf = round($hasilCF[$id], 4);
+            } elseif ($cfMethod !== null) {
+                $cfMethod = round($cfMethod, 4);
 
-                if ($cf >= 0.6) {
+                if ($cfMethod >= 0.6) {
                     $status = 'sangat_disarankan';
-                } elseif ($cf > 0) {
+                } elseif ($cfMethod > 0) {
                     $status = 'perlu_perhatian';
                 } else {
                     $status = 'tidak_disarankan';
                 }
-                
+
                 $alasanPositif = [];
                 $alasanNegatif = [];
+                $alasanDariDb = [];
 
                 foreach ($aturanAktif as $r) {
-                    if ($r['konklusi'] === $id) {
-                        $namaKondisi = $this->terjemahkanPremis($r['premis'], $kondisiLookup);
-                        if ($r['cf_pakar'] > 0) {
-                            $alasanPositif[] = $namaKondisi;
-                        } else if ($r['cf_pakar'] < 0) {
-                            $alasanNegatif[] = $namaKondisi;
+                    if ($r['konklusi'] === $idMetode) {
+                        if (!empty($r['alasan_medis'])) {
+                            $alasanDariDb[] = $r['alasan_medis'];
+                        } else {
+                            $namaKondisi = $this->terjemahkanPremis($r['premis'], $kondisiLookup);
+                            if ($r['cf_pakar'] > 0) {
+                                $alasanPositif[] = $namaKondisi;
+                            } else if ($r['cf_pakar'] < 0) {
+                                $alasanNegatif[] = $namaKondisi;
+                            }
                         }
                     }
                 }
@@ -228,40 +236,99 @@ class KonsultasiController extends Controller
                 $alasanPositif = array_unique($alasanPositif);
                 $alasanNegatif = array_unique($alasanNegatif);
 
-                if ($status == 'sangat_disarankan') {
-                    $teks = "Melihat kondisi Bunda yang memiliki catatan " . implode(", ", $alasanPositif) . ", metode ini menduduki peringkat teratas sebagai pilihan prioritas yang sangat direkomendasikan. Dari evaluasi pakar, metode ini terbukti memiliki tingkat kompatibilitas yang sangat tinggi dengan kondisi tubuh Bunda saat ini. Penggunaannya dijamin aman untuk jangka panjang dan tidak akan memicu interaksi negatif dengan riwayat medis Bunda. Ini adalah solusi perlindungan yang sangat andal dan memberikan ketenangan pikiran.";
-                    if (!empty($alasanNegatif)) {
-                        $teks .= " Meskipun Bunda juga memiliki riwayat ringan pada " . implode(" dan ", $alasanNegatif) . ", keunggulan metode ini tetap jauh melampaui risiko minornya.";
-                    }
-                    $alasan[] = $teks;
-                } elseif ($status == 'perlu_perhatian') {
-                    $teks = "Secara umum, metode ini cukup aman dan boleh digunakan, namun dengan pengawasan khusus (Kategori MEC 2). Kami mencatat adanya kondisi " . (!empty($alasanPositif) ? implode(", ", $alasanPositif) : "yang mendukung") . ".";
-                    if (!empty($alasanNegatif)) {
-                        $teks .= " Namun, karena Bunda juga memiliki riwayat " . implode(" dan ", $alasanNegatif) . ", hal ini memerlukan kehati-hatian ekstra.";
-                    }
-                    $teks .= " Keuntungannya memang masih terbukti lebih besar daripada risikonya, tetapi kami sangat menyarankan Bunda untuk berkonsultasi langsung dan memeriksakan diri secara rutin ke bidan atau dokter kandungan untuk mengantisipasi keluhan saat pemakaian.";
-                    $alasan[] = $teks;
+                // Prioritaskan alasan spesifik dari DB jika ada
+                if (!empty($alasanDariDb)) {
+                    $alasan = array_merge($alasan, $alasanDariDb);
                 } else {
-                    $teks = "Mohon berhati-hati. Kami mencatat kondisi " . (!empty($alasanNegatif) ? implode(" dan ", $alasanNegatif) : "tertentu") . " pada rekam medis Bunda. Secara klinis, metode ini KAMI KURANG SARANKAN (MEC 3) karena dikhawatirkan dapat memicu risiko komplikasi yang lebih besar daripada manfaatnya akibat kondisi tersebut. Sangat bijak untuk menghindari metode ini dan memilih alternatif yang lebih aman.";
-                    $alasan[] = $teks;
+                    if ($status == 'sangat_disarankan') {
+                        $teks = "Metode ini sangat direkomendasikan sebagai salah satu pilihan terbaik yang aman untuk Bunda.";
+                        if (!empty($alasanPositif)) {
+                            $alasanDetail = $this->generateAlasanMedisSpesifik($alasanPositif, $metode->nama_metode, 'positif');
+                            $teks .= " Secara medis, metode ini dinilai sangat cocok karena $alasanDetail.";
+                        } else {
+                            $teks .= " Penggunaannya dijamin aman untuk jangka panjang.";
+                        }
+                        if (!empty($alasanNegatif)) {
+                            $alasanMinus = $this->generateAlasanMedisSpesifik($alasanNegatif, $metode->nama_metode, 'negatif');
+                            $teks .= " Walaupun $alasanMinus, keunggulan metode ini masih jauh melampaui risikonya.";
+                        }
+                        $alasan[] = $teks;
+                    } elseif ($status == 'perlu_perhatian') {
+                        $teks = "Secara umum, metode ini cukup aman dan boleh digunakan, namun dengan pengawasan khusus (Kategori MEC 2).";
+                        if (!empty($alasanPositif)) {
+                            $alasanDetail = $this->generateAlasanMedisSpesifik($alasanPositif, $metode->nama_metode, 'positif');
+                            $teks .= " Keunggulannya adalah $alasanDetail.";
+                        }
+                        if (!empty($alasanNegatif)) {
+                            $alasanMinus = $this->generateAlasanMedisSpesifik($alasanNegatif, $metode->nama_metode, 'negatif');
+                            $teks .= " Namun hal ini memerlukan kehati-hatian ekstra karena $alasanMinus. Kami sangat menyarankan Bunda untuk memeriksakan diri secara rutin ke dokter.";
+                        }
+                        $alasan[] = $teks;
+                    } else {
+                        $teks = "Metode ini tidak disarankan untuk Bunda (Kategori MEC 3). Risiko secara teoritis melebihi keuntungannya.";
+                        if (!empty($alasanNegatif)) {
+                            $alasanMinus = $this->generateAlasanMedisSpesifik($alasanNegatif, $metode->nama_metode, 'negatif');
+                            $teks .= " Kondisi Bunda menyebabkan $alasanMinus. Sebaiknya pilih alternatif KB lain atau konsultasikan terlebih dahulu ke dokter.";
+                        }
+                        $alasan[] = $teks;
+                    }
+                }
+            }
+            
+            // Kumpulkan semua nama kondisi yang dipilih pasien untuk variasi teks
+            $semuaNamaKondisiUser = [];
+            foreach ($kondisiUser as $kId) {
+                if (isset($kondisiLookup[$kId])) {
+                    $semuaNamaKondisiUser[] = $kondisiLookup[$kId];
+                }
+            }
+            $teksRiwayat = "";
+            if (count($semuaNamaKondisiUser) > 0) {
+                $kondisiDisebut = array_slice($semuaNamaKondisiUser, 0, 3);
+                $teksRiwayat = implode(', ', $kondisiDisebut);
+                if (count($semuaNamaKondisiUser) > 3) {
+                    $teksRiwayat .= ', serta riwayat medis Bunda lainnya';
                 }
             }
 
+            // 5. Default jika tidak ada aturan yang terpicu sama sekali
             if ($status === 'tidak_ada_data') {
                 $status = 'sangat_disarankan';
-                $cf = 0.95;
-                $alasan[] = "Berdasarkan pedoman WHO (Kategori MEC 1), metode ini SANGAT AMAN. Tidak ditemukan satupun kondisi kontraindikasi pada riwayat medis Bunda, sehingga dapat digunakan tanpa pembatasan medis.";
+                $cfMethod = 0.95;
+                
+                if ($teksRiwayat !== "") {
+                    $alasan[] = "Berdasarkan pedoman WHO (Kategori MEC 1), " . $metode->nama_metode . " sangat aman digunakan. Metode ini sama sekali tidak memiliki kontraindikasi, sehingga bebas digunakan meskipun Bunda memiliki profil $teksRiwayat.";
+                } else {
+                    $alasan[] = "Berdasarkan evaluasi keahlian klinis Bidan dan pedoman WHO (Kategori MEC 1), metode ini SANGAT AMAN. Tidak ditemukan satupun kondisi kontraindikasi pada riwayat medis Bunda, sehingga dapat digunakan tanpa pembatasan medis.";
+                }
             } elseif (empty($alasan)) {
                 $alasan[] = "Metode ini dapat Bunda gunakan secara umum karena dari analisis kami tidak ada keluhan medis yang berlawanan dengan metode ini.";
             }
 
+            // Tambahan kalimat pemanis untuk hasil yang sangat disarankan tapi punya sedikit aturan positif
+            if ($status === 'sangat_disarankan' && !empty($alasan) && $teksRiwayat !== "") {
+                // Cek apakah alasan ini dari DB langsung, jika ya biarkan. Jika dari auto-generate, tambahkan kalimat pelengkap.
+                if (empty($alasanDariDb)) {
+                    $alasanTerakhir = array_pop($alasan);
+                    if (strpos($alasanTerakhir, 'Secara medis') !== false) {
+                        $alasanTerakhir .= " Lebih dari itu, metode ini juga dipastikan aman dan tidak akan memperburuk $teksRiwayat.";
+                    }
+                    $alasan[] = $alasanTerakhir;
+                }
+            }
+
+            $isTarget = ($idMetode === $targetKb);
+
             $hasilAkhir[] = [
-                'id' => $id,
+                'id' => $idMetode,
                 'nama_metode' => $metode->nama_metode,
-                'cf' => $cf,
-                'persentase' => $cf > 0 ? round($cf * 100, 1) : 0,
+                'cf' => $cfMethod,
+                'persentase' => $cfMethod > 0 ? round($cfMethod * 100, 1) : 0,
                 'status' => $status,
                 'alasan' => array_unique($alasan),
+                'is_target' => $isTarget,
+                'kelebihan' => $metode->kelebihan,
+                'kekurangan' => $metode->kekurangan
             ];
         }
 
@@ -281,7 +348,8 @@ class KonsultasiController extends Controller
         session([
             'hasilAkhir' => $hasilAkhir,
             'kondisiDipilih' => $kondisiDipilih,
-            'biodata' => $biodata
+            'biodata' => $biodata,
+            'targetKb' => $targetKb
         ]);
 
         return view('hasil', [
@@ -291,6 +359,7 @@ class KonsultasiController extends Controller
             'detailPerhitungan' => $detailPerhitungan,
             'jumlahKondisi' => count($kondisiUser),
             'jumlahAturanAktif' => count($aturanAktif),
+            'targetKb' => $targetKb
         ]);
     }
 
@@ -385,5 +454,75 @@ class KonsultasiController extends Controller
             }
         }
         return implode(' dan ', array_unique($namaArray));
+    }
+
+    /**
+     * Menghasilkan teks alasan medis spesifik berdasarkan interaksi antara metode KB dan kondisi.
+     */
+    private function generateAlasanMedisSpesifik(array $kondisis, string $namaMetode, string $kategori = 'positif'): string
+    {
+        $metodeHormonalKombinasi = ['pil kombinasi', 'suntik kombinasi 1 bulan'];
+        $metodeProgestin = ['pil mini', 'suntik kb 3 bulan', 'implan', 'susuk'];
+        $metodeIud = ['iud tembaga', 'iud hormonal', 'mirena'];
+        
+        $isKombinasi = false;
+        $isProgestin = false;
+        $isIud = false;
+        $metodeLower = strtolower($namaMetode);
+
+        foreach ($metodeHormonalKombinasi as $m) { if (strpos($metodeLower, $m) !== false) $isKombinasi = true; }
+        foreach ($metodeProgestin as $m) { if (strpos($metodeLower, $m) !== false) $isProgestin = true; }
+        foreach ($metodeIud as $m) { if (strpos($metodeLower, $m) !== false) $isIud = true; }
+
+        $alasanList = [];
+        
+        foreach ($kondisis as $kondisi) {
+            $k = strtolower($kondisi);
+            
+            if ($kategori == 'negatif' || $kategori == 'fatal') {
+                if (strpos($k, 'hipertensi') !== false || strpos($k, 'jantung') !== false || strpos($k, 'stroke') !== false || strpos($k, 'darah tinggi') !== false) {
+                    if ($isKombinasi) $alasanList[] = "kandungan hormon Estrogen pada metode ini dapat memicu retensi cairan yang meroketkan tekanan darah, sehingga sangat membahayakan kardiovaskular Bunda ($kondisi)";
+                    else $alasanList[] = "kondisi kardiovaskular ($kondisi) dapat berisiko terbebani dengan pemakaian metode ini";
+                }
+                elseif (strpos($k, 'payudara') !== false || strpos($k, 'tumor') !== false || strpos($k, 'kanker') !== false) {
+                    if ($isKombinasi || $isProgestin) $alasanList[] = "sel tumor/kanker payudara sangat sensitif terhadap asupan hormon sintetis dari luar, sehingga dapat merangsang pertumbuhan sel yang tidak normal ($kondisi)";
+                    else $alasanList[] = "kondisi tumor/kanker ($kondisi) merupakan kontraindikasi medis untuk metode ini";
+                }
+                elseif (strpos($k, 'panggul') !== false || strpos($k, 'seksual') !== false || strpos($k, 'pendarahan') !== false || strpos($k, 'ims') !== false) {
+                    if ($isIud) $alasanList[] = "pemasangan benda asing ke dalam rahim dapat memperburuk peradangan atau infeksi panggul yang sedang terjadi ($kondisi)";
+                    else $alasanList[] = "kondisi reproduksi ($kondisi) sedang tidak stabil untuk menerima metode ini";
+                }
+                elseif (strpos($k, 'migrain') !== false) {
+                    if ($isKombinasi) $alasanList[] = "hormon Estrogen dapat memicu penyempitan pembuluh darah (vasokonstriksi) yang berisiko memperparah serangan migrain Bunda ($kondisi)";
+                    else $alasanList[] = "riwayat sakit kepala parah ($kondisi) dapat memburuk akibat efek samping metode ini";
+                }
+                else {
+                    $alasanList[] = "terdapat risiko medis karena berbenturan dengan riwayat $kondisi";
+                }
+            } 
+            else { // Positif
+                if (strpos($k, 'menyusui') !== false || strpos($k, 'laktasi') !== false) {
+                    if (!$isKombinasi) $alasanList[] = "sifat metode ini tidak menekan produksi hormon prolaktin, sehingga kualitas dan kuantitas ASI untuk si kecil dipastikan tetap aman dan lancar ($kondisi)";
+                    else $alasanList[] = "metode ini dapat mengakomodasi kebutuhan ibu menyusui ($kondisi)";
+                }
+                elseif (strpos($k, 'jangka panjang') !== false || strpos($k, 'jarak kehamilan') !== false) {
+                    if ($isIud || $isProgestin) $alasanList[] = "metode ini didesain khusus untuk memberikan perlindungan stabil jangka panjang tanpa menuntut Bunda untuk repot mengingat jadwal pemakaian rutin ($kondisi)";
+                    else $alasanList[] = "metode ini memiliki tingkat efektivitas tinggi untuk menjaga jarak kehamilan ($kondisi)";
+                }
+                else {
+                    $alasanList[] = "metode ini sangat teruji selaras dan aman untuk profil kesehatan $kondisi";
+                }
+            }
+        }
+
+        if (empty($alasanList)) return "";
+
+        // Gabungkan list alasan menjadi paragraf yang baik
+        if (count($alasanList) == 1) {
+            return $alasanList[0];
+        } else {
+            $last = array_pop($alasanList);
+            return implode("; selain itu, ", $alasanList) . "; serta " . $last;
+        }
     }
 }

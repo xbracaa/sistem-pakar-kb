@@ -58,7 +58,7 @@
                 <h1 class="text-3xl font-black uppercase tracking-widest">Sure<span class="text-slate-500">Plan.</span></h1>
             </div>
             <p class="text-sm font-bold tracking-wider text-slate-700">DOKUMEN HASIL ANALISA SISTEM PAKAR KESEHATAN REPRODUKSI</p>
-            <p class="text-xs text-slate-500 mt-1">Menggunakan Standar Evaluasi Medis WHO (MEC 2015)</p>
+            <p class="text-xs text-slate-500 mt-1">Standar Evaluasi Klinis Bidan & WHO MEC 2015</p>
         </div>
 
         <div class="flex justify-between items-end mb-8">
@@ -130,7 +130,7 @@
                     <th class="border border-black px-4 py-2 w-12 text-center">Peringkat</th>
                     <th class="border border-black px-4 py-2">Metode Kontrasepsi</th>
                     <th class="border border-black px-4 py-2 w-32 text-center">Tingkat Kecocokan</th>
-                    <th class="border border-black px-4 py-2 w-48 text-center">Kategori WHO (MEC)</th>
+                    <th class="border border-black px-4 py-2 w-48 text-center">Kategori Evaluasi</th>
                 </tr>
             </thead>
             <tbody>

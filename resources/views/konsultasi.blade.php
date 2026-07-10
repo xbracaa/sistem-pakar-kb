@@ -113,6 +113,19 @@
                         <input type="text" name="nama" required placeholder="Cth: Nisa Sabyan" class="w-full px-5 py-4 bg-[#F9F8F3] border border-transparent rounded-2xl focus:outline-none focus:border-brand-dark focus:bg-white transition-all font-medium text-brand-dark placeholder-brand-accent/40 text-sm">
                     </div>
                     
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold tracking-widest uppercase text-brand-accent ml-2">Metode KB yang Diinginkan (Target)</label>
+                        <div class="relative">
+                            <select name="target_kb" class="w-full px-5 py-4 bg-[#F9F8F3] border border-transparent rounded-2xl focus:outline-none focus:border-brand-dark focus:bg-white transition-all font-medium text-brand-dark text-sm appearance-none cursor-pointer">
+                                <option value="" selected>Belum Tahu / Tampilkan Semua Rekomendasi</option>
+                                @foreach($metodeKbs as $m)
+                                    <option value="{{ $m->id }}">{{ $m->nama_metode }}</option>
+                                @endforeach
+                            </select>
+                            <svg class="w-4 h-4 absolute right-5 top-1/2 -translate-y-1/2 text-brand-accent pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Usia -->
                         <div class="space-y-2">
