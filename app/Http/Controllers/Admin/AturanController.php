@@ -32,10 +32,18 @@ class AturanController extends Controller
             'kondisi' => 'required|array|min:1',
             'metode' => 'required|string',
             'cf_pakar' => 'required|numeric|min:-1|max:1',
-            'alasan_medis' => 'nullable|string'
+            'alasan_medis' => 'required|string|min:15'
         ]);
 
         $premis = implode(' AND ', $request->kondisi);
+
+        $existingAturan = Aturan::where('premis', $premis)->where('konklusi', $request->metode)->first();
+        if ($existingAturan) {
+            $kondisiNames = \App\Models\Kondisi::whereIn('id', $request->kondisi)->pluck('nama_kondisi')->implode(' + ');
+            $metodeName = \App\Models\MetodeKb::where('id', $request->metode)->value('nama_metode');
+            $errorMsg = "Aturan tidak dapat ditambahkan karena aturan dengan kondisi '{$kondisiNames}' maka menggunakan metode '{$metodeName}' telah tersedia pada ID aturan {$existingAturan->id_aturan}";
+            return redirect()->back()->withInput()->with('error', $errorMsg);
+        }
 
         $lastAturan = Aturan::orderByRaw('CAST(SUBSTRING(id_aturan, 2) AS UNSIGNED) DESC')->first();
         $nextNumber = $lastAturan ? intval(substr($lastAturan->id_aturan, 1)) + 1 : 1;
@@ -73,12 +81,33 @@ class AturanController extends Controller
         $aturan = Aturan::findOrFail($id);
         
         $request->validate([
+            'kondisi' => 'required|array|min:1',
+            'metode' => 'required|string',
             'cf_pakar' => 'required|numeric|min:-1|max:1',
-            'alasan_medis' => 'nullable|string'
+            'alasan_medis' => 'required|string|min:15'
         ]);
 
+        $premis = implode(' AND ', $request->kondisi);
+
+        $existingAturan = Aturan::where('premis', $premis)->where('konklusi', $request->metode)->where('id', '!=', $id)->first();
+        if ($existingAturan) {
+            $kondisiNames = \App\Models\Kondisi::whereIn('id', $request->kondisi)->pluck('nama_kondisi')->implode(' + ');
+            $metodeName = \App\Models\MetodeKb::where('id', $request->metode)->value('nama_metode');
+            $errorMsg = "Aturan tidak dapat diubah karena aturan dengan kondisi '{$kondisiNames}' maka menggunakan metode '{$metodeName}' telah tersedia pada ID aturan {$existingAturan->id_aturan}";
+            return redirect()->back()->withInput()->with('error', $errorMsg);
+        }
+
+        $cf = (float) $request->cf_pakar;
+        $kategori = '1';
+        if ($cf == -1.0) $kategori = '4';
+        elseif ($cf < 0) $kategori = '3';
+        elseif ($cf < 0.8) $kategori = '2';
+
         $aturan->update([
-            'cf_pakar' => $request->cf_pakar,
+            'premis' => $premis,
+            'konklusi' => $request->metode,
+            'cf_pakar' => $cf,
+            'kategori_mec' => $kategori,
             'alasan_medis' => $request->alasan_medis
         ]);
 

@@ -54,7 +54,7 @@
 
         <div>
             <label class="block text-sm font-bold text-brand-dark mb-2">Penjelasan Medis Khusus</label>
-            <textarea name="alasan_medis" rows="4" class="w-full bg-[#F5F8F6] border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed" placeholder="Tuliskan alasan mengapa metode ini dilarang/dianjurkan untuk kondisi di atas..."></textarea>
+            <textarea name="alasan_medis" rows="4" class="w-full bg-[#F5F8F6] border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed" placeholder="Tuliskan alasan mengapa metode ini dilarang/dianjurkan untuk kondisi di atas..." required minlength="15"></textarea>
             <p class="text-[10px] text-brand-accent mt-2 font-medium">Teks ini akan muncul di Accordion hasil rekomendasi pasien.</p>
         </div>
 

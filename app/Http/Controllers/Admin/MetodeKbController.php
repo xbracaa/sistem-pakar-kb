@@ -23,8 +23,8 @@ class MetodeKbController extends Controller
     {
         $request->validate([
             'nama_metode' => 'required|string|max:255',
-            'kelebihan' => 'nullable|string',
-            'kekurangan' => 'nullable|string',
+            'kelebihan' => 'required|string|min:15',
+            'kekurangan' => 'required|string|min:15',
         ]);
 
         $lastMetode = MetodeKb::orderByRaw('CAST(SUBSTRING(id, 2) AS UNSIGNED) DESC')->first();
@@ -53,8 +53,8 @@ class MetodeKbController extends Controller
         
         $request->validate([
             'nama_metode' => 'required|string|max:255',
-            'kelebihan' => 'nullable|string',
-            'kekurangan' => 'nullable|string',
+            'kelebihan' => 'required|string|min:15',
+            'kekurangan' => 'required|string|min:15',
         ]);
 
         $metode->update([
@@ -69,6 +69,12 @@ class MetodeKbController extends Controller
     public function destroy($id)
     {
         $metode = MetodeKb::findOrFail($id);
+        
+        $aturanTerkait = \App\Models\Aturan::where('konklusi', $metode->id)->exists();
+        if ($aturanTerkait) {
+            return redirect()->route('admin.metode.index')->with('error', 'Metode KB tidak bisa dihapus karena masih digunakan di Aturan Medis!');
+        }
+
         $metode->delete();
         return redirect()->route('admin.metode.index')->with('success', 'Metode KB berhasil dihapus!');
     }

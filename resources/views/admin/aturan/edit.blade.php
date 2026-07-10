@@ -10,32 +10,44 @@
 </div>
 
 @php
-    // Terjemahkan K01 AND K02
-    $kodeArray = explode(' AND ', $aturan->premis);
-    $namaKondisi = [];
-    foreach($kodeArray as $k) {
-        $k = trim($k);
-        if(isset($kondisis[$k])) {
-            $namaKondisi[] = $kondisis[$k]->nama_kondisi;
-        }
-    }
-    $teksKondisi = implode(' + ', $namaKondisi);
-    $teksMetode = isset($metodes[$aturan->konklusi]) ? $metodes[$aturan->konklusi]->nama_metode : $aturan->konklusi;
+    $selectedKondisi = array_map('trim', explode(' AND ', $aturan->premis));
 @endphp
 
+<form action="{{ route('admin.aturan.update', $aturan->id) }}" method="POST">
+    @csrf
+    @method('PUT')
+    
 <div class="bg-white rounded-3xl border border-brand-border p-8 shadow-sm max-w-3xl">
     
-    <div class="bg-[#F5F8F6] border border-[#D0E3D6] rounded-2xl p-6 mb-8 flex flex-col md:flex-row gap-6">
-        <div class="flex-1">
-            <span class="block text-[10px] font-bold tracking-widest text-brand-accent uppercase mb-1">Jika Kondisi Pasien:</span>
-            <div class="font-extrabold text-brand-dark text-lg">{{ $teksKondisi }}</div>
+    <div class="flex flex-col md:flex-row items-center gap-6 bg-[#F5F8F6] rounded-2xl p-6 border border-[#D0E3D6] mb-8">
+        <div class="flex-grow w-full">
+            <label class="block text-[10px] font-bold tracking-widest text-brand-accent uppercase mb-2">JIKA KONDISI PASIEN:</label>
+            <div class="h-48 overflow-y-auto bg-white border border-[#D0E3D6] rounded-xl p-3">
+                @foreach($kondisis as $k)
+                    <label class="flex items-start gap-2 mb-2 cursor-pointer p-2 hover:bg-gray-50 rounded">
+                        <input type="checkbox" name="kondisi[]" value="{{ $k->id }}" class="mt-1" {{ in_array($k->id, $selectedKondisi) ? 'checked' : '' }}>
+                        <span class="text-sm font-bold text-brand-dark">{{ $k->nama_kondisi }}</span>
+                    </label>
+                @endforeach
+            </div>
+            <p class="text-[10px] text-brand-accent mt-1">*Bisa pilih lebih dari satu (AND)</p>
         </div>
-        <div class="flex items-center justify-center hidden md:flex">
-            <svg class="w-6 h-6 text-[#A2C2AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+        
+        <div class="hidden md:flex text-brand-accent flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
         </div>
-        <div class="flex-1">
-            <span class="block text-[10px] font-bold tracking-widest text-brand-accent uppercase mb-1">Maka Metode KB:</span>
-            <div class="font-extrabold text-brand-dark text-lg">{{ $teksMetode }}</div>
+        <div class="flex md:hidden text-brand-accent">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+        </div>
+
+        <div class="flex-grow w-full">
+            <label class="block text-[10px] font-bold tracking-widest text-brand-accent uppercase mb-2">MAKA METODE KB:</label>
+            <select name="metode" class="w-full text-lg font-extrabold text-brand-dark bg-white border border-[#D0E3D6] rounded-xl p-3" required>
+                <option value="" disabled>Pilih Metode...</option>
+                @foreach($metodes as $m)
+                    <option value="{{ $m->id }}" {{ $aturan->konklusi == $m->id ? 'selected' : '' }}>{{ $m->nama_metode }}</option>
+                @endforeach
+            </select>
         </div>
     </div>
 
@@ -45,9 +57,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.aturan.update', $aturan->id) }}" method="POST">
-        @csrf
-        @method('PUT')
+    
         
         <div class="mb-6">
             <label class="block text-sm font-bold text-brand-dark mb-2">Bobot Pakar (Berdasarkan Kategori MEC)</label>
@@ -57,7 +67,7 @@
 
         <div class="mb-8">
             <label class="block text-sm font-bold text-brand-dark mb-2">Penjelasan Medis Khusus</label>
-            <textarea name="alasan_medis" rows="5" class="w-full bg-[#F5F8F6] border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed placeholder:text-[#A2C2AF]" placeholder="Tuliskan alasan mengapa metode ini dilarang/dianjurkan untuk kondisi di atas...">{{ old('alasan_medis', $aturan->alasan_medis) }}</textarea>
+            <textarea name="alasan_medis" rows="5" class="w-full bg-[#F5F8F6] border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed placeholder:text-[#A2C2AF]" placeholder="Tuliskan alasan mengapa metode ini dilarang/dianjurkan untuk kondisi di atas..." required minlength="15">{{ old('alasan_medis', $aturan->alasan_medis) }}</textarea>
             <p class="text-xs text-brand-accent mt-2 font-medium">Teks ini akan muncul di Accordion hasil rekomendasi pasien.</p>
         </div>
 

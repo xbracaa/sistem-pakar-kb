@@ -40,20 +40,38 @@
     <nav class="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center relative z-50">
         <!-- Logo -->
         <a href="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-brand-dark">
-            <div class="w-7 h-7 bg-brand-dark rounded-full text-white flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                </svg>
-            </div>
+            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
             SurePlan
         </a>
-        <!-- Nav Link -->
-        <a href="/katalog" class="hidden md:block text-sm font-medium text-brand-accent hover:text-brand-dark transition-colors">Edukasi KB</a>
-        <!-- CTA -->
-        <a href="/konsultasi" class="bg-brand-dark text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-opacity-90 transition-all flex items-center gap-2">
-            Mulai Konsultasi
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-        </a>
+        <!-- Links and Actions -->
+        <div class="flex items-center gap-6">
+            <!-- Nav Link -->
+            <a href="/katalog" class="hidden md:block text-sm font-medium text-brand-accent hover:text-brand-dark transition-colors">Edukasi KB</a>
+            
+            @auth
+                <div class="flex items-center gap-4 border-l border-brand-border pl-6">
+                    <span class="text-sm font-semibold text-brand-dark hidden md:inline">Halo, {{ Auth::user()->name }}</span>
+                    @if(Auth::user()->role === 'bidan')
+                        <a href="{{ route('admin.dashboard') }}" class="text-sm font-bold text-brand-dark hover:text-brand-accent transition-colors">Dashboard</a>
+                    @endif
+                    <form action="{{ route('logout') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="text-sm font-bold text-rose-500 hover:text-rose-700 transition-colors">Logout</button>
+                    </form>
+                </div>
+            @endauth
+            @guest
+                <div class="flex items-center gap-4 border-l border-brand-border pl-6">
+                    <a href="{{ route('login') }}" class="text-sm font-bold text-brand-dark hover:text-brand-accent transition-colors">Masuk</a>
+                </div>
+            @endguest
+
+            <!-- CTA -->
+            <a href="/konsultasi" class="bg-brand-dark text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-opacity-90 transition-all flex items-center gap-2">
+                Mulai Konsultasi
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </a>
+        </div>
     </nav>
 
     <!-- Hero Section -->
@@ -62,19 +80,22 @@
         <div class="space-y-6 lg:pr-8" data-aos="fade-right">
             <!-- Badge -->
             <div class="inline-flex items-center gap-2 bg-white border border-brand-border rounded-full px-4 py-2 text-xs font-semibold text-brand-accent shadow-sm">
-                <svg class="w-4 h-4 text-brand-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                Berdasarkan Standar WHO MEC 2015
+                <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                Berdasarkan Standar WHO MEC 2025
             </div>
             <!-- Headline -->
             <h1 class="text-5xl md:text-6xl font-extrabold leading-[1.15] tracking-tight text-brand-dark">
                 Pilihan Kontrasepsi Paling Aman Untuk Masa Depan Keluarga Anda.
             </h1>
             <!-- Subheadline -->
-            <p class="text-lg text-brand-accent max-w-lg leading-relaxed font-medium">
-                Temukan metode KB yang 100% cocok dengan kondisi medis Anda. Dianalisa menggunakan algoritma pakar dalam hitungan detik.
+            <p class="text-lg text-brand-accent leading-relaxed max-w-xl">
+                Dapatkan rekomendasi metode kontrasepsi yang paling aman dan sesuai dengan kondisi kesehatan Anda saat ini, berdasarkan pedoman medis WHO MEC.
             </p>
-            <!-- Buttons & Proof -->
-            <div class="pt-4 space-y-5">
+
+            
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-4 pt-4">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                     <a href="/konsultasi" class="bg-brand-dark text-white text-base font-semibold px-8 py-4 rounded-full hover:bg-opacity-90 transition-all flex items-center gap-2 shadow-lg">
                         Cek Kecocokan KB Sekarang
@@ -106,7 +127,7 @@
         <div class="relative w-full h-[500px] lg:h-[600px] flex justify-center items-center" data-aos="fade-left" data-aos-delay="200">
             <!-- Organic Circular Mask -->
             <div class="relative w-[380px] h-[380px] lg:w-[480px] lg:h-[480px] rounded-full overflow-hidden bg-brand-light">
-                <img src="https://images.unsplash.com/photo-1584362917165-526a968579e8?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover object-[center_30%]" alt="Ibu dan Anak">
+                <img src="{{ asset('assets/images/ilustrasi.png') }}" class="w-full h-full object-cover object-[center_30%]" alt="Ilustrasi">
             </div>
             
             <!-- Left Badge -->
@@ -121,9 +142,11 @@
             </div>
             
             <!-- Right Badge -->
-            <div class="absolute bottom-1/4 right-0 lg:-right-4 bg-brand-dark text-white p-5 rounded-3xl shadow-[0_10px_40px_-10px_rgba(23,52,36,0.3)] flex flex-col justify-center">
-                <div class="text-[10px] text-white/80 uppercase tracking-wider mb-0.5">Standar</div>
-                <div class="text-base font-bold">WHO MEC 2015</div>
+            <div class="absolute bottom-1/4 right-0 lg:-right-4 bg-brand-dark text-white p-5 rounded-3xl shadow-[0_10px_40px_-10px_rgba(23,52,36,0.3)]">
+                <div class="flex-grow">
+                    <div class="text-[10px] font-bold text-brand-light uppercase tracking-wider">Standar</div>
+                    <div class="text-base font-bold">WHO MEC 2025</div>
+                </div>
             </div>
         </div>
     </section>
@@ -162,7 +185,7 @@
                 
                 <div class="mt-auto">
                     <div class="text-4xl font-black text-brand-dark">WHO</div>
-                    <div class="text-[10px] font-bold tracking-widest text-brand-dark/50 uppercase mt-2">MEC 2015</div>
+                    <div class="text-[10px] font-bold tracking-widest text-brand-dark/50 uppercase mt-2">MEC 2025</div>
                 </div>
                 <!-- Decor -->
                 <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-brand-dark/5 rounded-full"></div>
@@ -208,8 +231,8 @@
                 <!-- Step 2 -->
                 <div class="bg-brand-bg relative z-10 md:px-4" data-aos="fade-up" data-aos-delay="200">
                     <div class="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center font-bold text-lg mb-6">02</div>
-                    <h3 class="text-xl font-bold text-brand-dark mb-3">Analisa Sistem Pakar</h3>
-                    <p class="text-sm text-brand-accent leading-relaxed">Algoritma berbasis WHO MEC 2015 secara otomatis mengevaluasi kelayakan setiap metode KB untuk kondisi Anda.</p>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Analisis Pintar</h3>
+                    <p class="text-sm text-brand-accent leading-relaxed">Algoritma berbasis WHO MEC 2025 secara otomatis mengevaluasi kelayakan setiap metode KB untuk kondisi Anda.</p>
                 </div>
                 
                 <!-- Step 3 -->
@@ -228,12 +251,12 @@
             <!-- Left: Circular Image -->
             <div class="relative flex justify-center lg:justify-start" data-aos="fade-right">
                 <div class="w-[320px] h-[400px] md:w-[420px] md:h-[500px] bg-[#E3E1DA] rounded-[200px] overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1550831107-1553da8c8464?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover mix-blend-multiply" alt="Dokter Profil">
+                    <img src="{{ asset('assets/images/bidan.jpg') }}" class="w-full h-full object-cover mix-blend-multiply" alt="Bidan Profil">
                 </div>
                 <!-- Badge SIP -->
                 <div class="absolute bottom-8 right-4 lg:right-12 bg-white px-6 py-4 rounded-2xl shadow-xl border border-brand-border">
-                    <div class="text-[10px] uppercase tracking-wider text-brand-accent mb-0.5">SIP Verified</div>
-                    <div class="text-sm font-bold text-brand-dark">No. 503.1/2024/BIDAN</div>
+                    <div class="text-[10px] uppercase tracking-wider text-brand-accent mb-0.5">SIPB Verified</div>
+                    <div class="text-sm font-bold text-brand-dark">500.16.7.2/1547/384-SIPB/DPMPTS/2023</div>
                 </div>
             </div>
             
@@ -251,10 +274,10 @@
                         Sistem ini dibangun atas basis pengetahuan kebidanan yang ketat. Setiap rekomendasi telah melalui validasi klinis yang cermat. Keselamatan reproduksi Anda adalah prioritas mutlak kami.
                     </p>
                     <div class="flex items-center gap-4">
-                        <img src="https://images.unsplash.com/photo-1594824432258-29007f5986dd?q=80&w=100&auto=format&fit=crop" class="w-12 h-12 rounded-full object-cover shadow-sm">
+                        <img src="{{ asset('assets/images/bidan.jpg') }}" class="w-12 h-12 rounded-full object-cover shadow-sm">
                         <div>
-                            <div class="font-bold text-brand-dark text-sm">Bidan Fulanah, S.Tr.Keb.</div>
-                            <div class="text-xs text-brand-accent mt-0.5">SIP No. 503.1/2024/BIDAN</div>
+                            <div class="font-bold text-brand-dark text-sm">Hani Herfiyana, S.Tr.Keb,bdn</div>
+                            <div class="text-xs text-brand-accent mt-0.5">SIPB: 500.16.7.2/1547/384-SIPB/DPMPTS/2023</div>
                         </div>
                     </div>
                 </div>
@@ -265,7 +288,7 @@
                         <div class="w-6 h-6 rounded-full bg-brand-light flex items-center justify-center text-brand-dark flex-shrink-0">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                         </div>
-                        Berbasis Algoritma WHO MEC 2015 yang telah tervalidasi
+                        Berbasis Algoritma WHO MEC 2025 yang telah tervalidasi
                     </li>
                     <li class="flex items-center gap-4 text-brand-dark font-medium text-sm">
                         <div class="w-6 h-6 rounded-full bg-brand-light flex items-center justify-center text-brand-dark flex-shrink-0">
@@ -308,11 +331,7 @@
     <!-- Footer -->
     <footer class="py-12 border-t border-brand-border text-center space-y-6">
         <a href="/" class="flex items-center justify-center gap-2 font-bold text-xl tracking-tight text-brand-dark">
-            <div class="w-7 h-7 bg-brand-dark rounded-full text-white flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                </svg>
-            </div>
+            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
             SurePlan
         </a>
         <p class="text-brand-accent text-sm max-w-lg mx-auto leading-relaxed">

@@ -25,9 +25,7 @@
         <aside class="w-64 bg-white/80 backdrop-blur-md border-r border-brand-border hidden md:flex flex-col shadow-2xl relative z-10">
             <div class="p-6 border-b border-brand-border">
                 <a href="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-brand-dark">
-                    <div class="w-7 h-7 bg-brand-dark rounded-full text-white flex items-center justify-center shadow-sm">
-                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>
-                    </div>
+                    <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
                     SurePlan
                 </a>
                 <span class="block mt-1 text-[10px] font-bold tracking-widest text-brand-accent uppercase">Panel Bidan</span>
@@ -73,6 +71,11 @@
                 @if(session('success'))
                     <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-2xl text-sm font-bold shadow-sm">
                         {{ session('success') }}
+                    </div>
+                @endif
+                @if(session('error'))
+                    <div class="mb-6 bg-rose-50 border border-rose-200 text-rose-700 px-6 py-4 rounded-2xl text-sm font-bold shadow-sm">
+                        {{ session('error') }}
                     </div>
                 @endif
                 

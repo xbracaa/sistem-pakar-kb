@@ -41,11 +41,7 @@
     <nav class="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center relative z-50">
         <!-- Logo -->
         <a href="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-brand-dark">
-            <div class="w-7 h-7 bg-brand-dark rounded-full text-white flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                </svg>
-            </div>
+            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
             SurePlan
         </a>
         <a href="/katalog" class="hidden md:block text-sm font-bold border-b-2 border-brand-dark pb-1 text-brand-dark transition-colors">Edukasi KB</a>
@@ -57,8 +53,15 @@
     </nav>
 
     <!-- Main Content wrapper with Alpine -->
-    <main x-data="{ activeFilter: 'Semua' }" class="max-w-7xl mx-auto px-6 pt-16 pb-24">
+    <main x-data="{ activeFilter: 'Semua' }" class="max-w-7xl mx-auto px-6 pt-10 pb-24">
         
+        <div class="mb-10" data-aos="fade-right">
+            <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-brand-accent hover:text-brand-dark transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                Kembali ke Beranda
+            </a>
+        </div>
+
         <!-- Header -->
         <div class="text-center max-w-3xl mx-auto mb-16" data-aos="fade-up">
             <h1 class="text-5xl md:text-7xl font-extrabold text-brand-dark tracking-tight leading-[1.1] mb-6">
@@ -297,11 +300,7 @@
     <!-- Footer -->
     <footer class="py-12 border-t border-brand-border text-center space-y-6">
         <a href="/" class="flex items-center justify-center gap-2 font-bold text-xl tracking-tight text-brand-dark">
-            <div class="w-7 h-7 bg-brand-dark rounded-full text-white flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                </svg>
-            </div>
+            <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
             SurePlan
         </a>
         <p class="text-brand-accent text-sm max-w-lg mx-auto leading-relaxed">

@@ -61,6 +61,12 @@ class KondisiController extends Controller
     public function destroy($id)
     {
         $kondisi = Kondisi::findOrFail($id);
+        
+        $aturanTerkait = \App\Models\Aturan::where('premis', 'LIKE', '%' . $kondisi->id . '%')->exists();
+        if ($aturanTerkait) {
+            return redirect()->route('admin.kondisi.index')->with('error', 'Kondisi tidak bisa dihapus karena masih digunakan di Aturan Medis!');
+        }
+
         $kondisi->delete();
         return redirect()->route('admin.kondisi.index')->with('success', 'Data Kondisi berhasil dihapus!');
     }

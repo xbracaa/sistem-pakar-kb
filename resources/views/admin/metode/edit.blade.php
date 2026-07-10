@@ -34,12 +34,12 @@
 
         <div class="mb-6 relative z-10">
             <label class="block text-[10px] font-bold tracking-widest text-brand-accent uppercase mb-2">Kelebihan KB</label>
-            <textarea name="kelebihan" rows="3" class="w-full bg-white border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed transition-all shadow-sm hover:shadow-md">{{ old('kelebihan', $metode->kelebihan) }}</textarea>
+            <textarea name="kelebihan" rows="3" class="w-full bg-white border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed transition-all shadow-sm hover:shadow-md" required minlength="15">{{ old('kelebihan', $metode->kelebihan) }}</textarea>
         </div>
 
         <div class="mb-8 relative z-10">
             <label class="block text-[10px] font-bold tracking-widest text-brand-accent uppercase mb-2">Kekurangan KB</label>
-            <textarea name="kekurangan" rows="3" class="w-full bg-white border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed transition-all shadow-sm hover:shadow-md">{{ old('kekurangan', $metode->kekurangan) }}</textarea>
+            <textarea name="kekurangan" rows="3" class="w-full bg-white border border-[#D0E3D6] rounded-xl px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark/20 font-medium leading-relaxed transition-all shadow-sm hover:shadow-md" required minlength="15">{{ old('kekurangan', $metode->kekurangan) }}</textarea>
         </div>
 
         <div class="flex justify-end gap-3 mt-8 relative z-10">

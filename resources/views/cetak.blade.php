@@ -52,13 +52,11 @@
         <!-- Kop Surat -->
         <div class="border-b-4 border-black pb-6 mb-8 text-center flex flex-col items-center">
             <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-sm bg-black text-white flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>
-                </div>
+                <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-10 h-10 object-contain">
                 <h1 class="text-3xl font-black uppercase tracking-widest">Sure<span class="text-slate-500">Plan.</span></h1>
             </div>
             <p class="text-sm font-bold tracking-wider text-slate-700">DOKUMEN HASIL ANALISA SISTEM PAKAR KESEHATAN REPRODUKSI</p>
-            <p class="text-xs text-slate-500 mt-1">Standar Evaluasi Klinis Bidan & WHO MEC 2015</p>
+            <p class="text-xs text-slate-500 mt-1">Standar Evaluasi Klinis Bidan & WHO MEC 2025</p>
         </div>
 
         <div class="flex justify-between items-end mb-8">
@@ -81,7 +79,7 @@
             </div>
             <div class="flex border-b border-black border-dashed pb-1">
                 <span class="font-bold w-32">Nama Suami</span>
-                <span class="flex-grow">: {{ $biodata['suami'] ?? '......................................................' }}</span>
+                <span class="flex-grow">: {{ (!empty($biodata['suami']) && $biodata['suami'] !== '-') ? $biodata['suami'] : '......................................................' }}</span>
             </div>
             <div class="flex border-b border-black border-dashed pb-1">
                 <span class="font-bold w-32">Jml Anak</span>
@@ -164,10 +162,10 @@
 
         <!-- Tanda Tangan Dokter/Bidan -->
         <div class="flex justify-end mt-16">
-            <div class="text-center w-64">
+            <div class="text-center w-72">
                 <p class="mb-20">Dokter / Bidan Pemeriksa,</p>
-                <p class="border-b border-black inline-block w-48 mb-1"></p>
-                <p class="text-sm">SIP: .......................................</p>
+                <p class="font-bold border-b border-black inline-block px-4 mb-1">Hani Herfiyana, S.Tr.Keb,bdn</p>
+                <p class="text-sm">SIPB: 500.16.7.2/1547/384-SIPB/DPMPTS/2023</p>
             </div>
         </div>
 

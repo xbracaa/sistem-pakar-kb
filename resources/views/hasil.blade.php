@@ -91,9 +91,7 @@
         <div class="max-w-7xl mx-auto w-full flex justify-between items-center">
             <!-- Logo -->
             <a href="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-brand-dark">
-                <div class="w-7 h-7 bg-brand-dark rounded-full text-white flex items-center justify-center shadow-sm">
-                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>
-                </div>
+                <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
                 SurePlan
             </a>
             <span class="hidden md:block text-sm font-bold text-brand-dark opacity-60">Hasil Analisa Medis</span>
@@ -122,7 +120,7 @@
             Analisa Selesai. Ini<br>Rekomendasi Terbaik<br>Untuk Anda.
         </h1>
         <p class="text-base text-brand-accent font-medium leading-relaxed max-w-2xl mx-auto">
-            Algoritma kami telah mencocokkan profil kesehatan Anda berdasarkan pengetahuan medis Bidan pakar kami dan pedoman WHO MEC 2015.
+            Algoritma kami telah mencocokkan profil kesehatan Anda berdasarkan pengetahuan medis Bidan pakar kami dan pedoman WHO MEC 2025.
         </p>
     </header>
 
@@ -133,7 +131,7 @@
             <div>
                 <h4 class="text-[10px] font-bold tracking-widest uppercase text-amber-800 mb-1.5">Penting Sebelum Membaca</h4>
                 <p class="text-xs text-amber-900/70 leading-relaxed font-medium">
-                    Hasil ini dikalkulasi sistem berdasarkan keahlian klinis Bidan serta pedoman <em>WHO MEC 2015</em> dan bertujuan sebagai pra-skrining. <strong>Ini BUKAN pengganti diagnosis medis.</strong> Selalu konsultasikan pilihan kontrasepsi Anda secara langsung ke tenaga medis.
+                    Hasil ini dikalkulasi sistem berdasarkan keahlian klinis Bidan serta pedoman <em>WHO MEC 2025</em> dan bertujuan sebagai pra-skrining. <strong>Ini BUKAN pengganti diagnosis medis.</strong> Selalu konsultasikan pilihan kontrasepsi Anda secara langsung ke tenaga medis.
                 </p>
             </div>
         </div>
