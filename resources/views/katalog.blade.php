@@ -228,7 +228,7 @@
                             <span class="text-brand-dark text-xs">{{ $info['efektivitas'] }}%</span>
                         </div>
                         <div class="w-full h-1.5 bg-brand-light rounded-full overflow-hidden">
-                            <div class="h-full bg-brand-dark rounded-full" style="width: {{ $info['efektivitas'] }}%"></div>
+                            <div class="h-full bg-brand-dark rounded-full" @style(["width: {$info['efektivitas']}%"])></div>
                         </div>
                     </div>
 

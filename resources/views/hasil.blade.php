@@ -317,7 +317,7 @@
                                 <span class="text-brand-dark">{{ $item['persentase'] }}%</span>
                             </div>
                             <div class="w-full h-1.5 bg-brand-bg rounded-full overflow-hidden">
-                                <div class="h-full bg-brand-dark rounded-full" style="width: {{ $item['persentase'] }}%"></div>
+                                <div class="h-full bg-brand-dark rounded-full" @style(["width: {$item['persentase']}%"])></div>
                             </div>
                         </div>
 
