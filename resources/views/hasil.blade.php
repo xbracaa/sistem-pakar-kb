@@ -205,7 +205,7 @@
                             <span class="block text-[10px] font-bold tracking-widest {{ $themeDesc }} uppercase mb-2">STATUS KEAMANAN</span>
                             <div class="text-lg font-bold {{ $themeStatus }}">
                                 @if($targetItem['status'] == 'sangat_disarankan' || $targetItem['persentase'] >= 80) AMAN (Kategori 1/2)
-                                @elseif($targetItem['status'] == 'perlu_perhatian' || $targetItem['persentase'] >= 40) PERLU KEHATI-HATIAN (Kategori 3)
+                                @elseif($targetItem['status'] == 'perlu_perhatian' || $targetItem['status'] == 'tidak_disarankan' || $targetItem['persentase'] >= 40) PERLU KEHATI-HATIAN (Kategori 3)
                                 @else DILARANG (Kategori 4)
                                 @endif
                             </div>
